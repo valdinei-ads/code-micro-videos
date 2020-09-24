@@ -4,8 +4,8 @@
 /storage/*.key
 /vendor
 /.docker/mysql_old
-.env
-.env.testing
+/.env
+/.env.testing
 .env.backup
 .phpunit.result.cache
 Homestead.json
