@@ -31,48 +31,29 @@ class GenreControllerTest extends TestCase
             ->assertJson($genre->toArray());
     }
 
-    public function testStore()
+    public function testInvalidationData()
     {
-        $response = $this->json('POST', route('genres.store'), []);
+        $response = $this->createGenre([]);
         $this->assertInvalidationDataRequired($response);
 
-        $data = [
-            'name' => str_repeat('a', 256),
-            'is_active' => 'a'
-        ];
-
-        $response = $this->json('POST', route('genres.store'), $data);
-
-        $this->assertInvalidationDataMax($response);
-        $this->assertInvalidationDataBoolean($response);
-    }
-
-    public function testUpdate()
-    {
-        $genre = factory(Genre::class)->create();
-
-        $response = $this->json('PUT', route('genres.update', ['genre' => $genre]), []);
-        $this->assertInvalidationDataRequired($response);
-
-        $response = $this->json('PUT', route('genres.update', ['genre' => $genre]), [
+        $response = $this->createGenre([
             'name' => str_repeat('a', 256),
             'is_active' => 'a'
         ]);
         $this->assertInvalidationDataMax($response);
         $this->assertInvalidationDataBoolean($response);
-    }
 
-    public function testDelete()
-    {
         $genre = factory(Genre::class)->create();
 
-        $response = $this->json('DELETE', route('genres.destroy', ['genre' => $genre]));
+        $response = $this->updateGenre($genre, []);
+        $this->assertInvalidationDataRequired($response);
 
-        $response->assertStatus(204 );
-
-        $response = $this->get(route('genres.show', ['genre' => $genre->id]));
-
-        $response->assertStatus(404 );
+        $response = $this->updateGenre($genre, [
+            'name' => str_repeat('a', 256),
+            'is_active' => 'a'
+        ]);
+        $this->assertInvalidationDataMax($response);
+        $this->assertInvalidationDataBoolean($response);
     }
 
     protected function assertInvalidationDataRequired(TestResponse $response)
@@ -104,5 +85,69 @@ class GenreControllerTest extends TestCase
             ->assertJsonFragment([
                 trans('validation.boolean', ['attribute' => 'is active'])
             ]);
+    }
+
+    public function testStore()
+    {
+        $response = $this->createGenre(['name' => 'teste_nome_genre']);
+
+        $genre = Genre::find($response->json('id'));
+        $response->assertStatus(201)->assertJson($genre->toArray());
+        $this->assertTrue($response->json('is_active'));
+
+        $response = $this->createGenre([
+            'name' => 'teste_nome_genre',
+            'is_active' => false
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'teste_nome_genre',
+            'is_active' => false
+        ]);
+    }
+
+    public function testUpdate()
+    {
+        $genre = factory(Genre::class)->create([
+            'is_active' => false
+        ]);
+        $response = $this->updateGenre($genre, [
+            'name' => 'teste',
+            'description' => 'descricao',
+            'is_active' => true
+        ]);
+        $id = $response->json('id');
+        $genre = Genre::find($id);
+        $response
+            ->assertStatus(200)
+            ->assertJson($genre->toArray())
+            ->assertJsonFragment([
+                'is_active' => true
+            ]);
+    }
+
+    public function testDelete()
+    {
+        $genre = factory(Genre::class)->create();
+
+        $response = $this->json('DELETE', route('genres.destroy', ['genre' => $genre]));
+        $response->assertStatus(204 );
+
+        $response = $this->get(route('genres.show', ['genre' => $genre->id]));
+        $response->assertStatus(404 );
+    }
+
+    public function createGenre($data)
+    {
+        $method = 'POST';
+        $route = 'genres.store';
+        return $this->json($method, route($route), $data);
+    }
+
+    public function updateGenre($oldData, $newData)
+    {
+        $method = 'PUT';
+        $route = 'genres.update';
+        $oldGenre = ['genre' => $oldData->id];
+        return $this->json($method, route($route, $oldGenre), $newData);
     }
 }

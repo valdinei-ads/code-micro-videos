@@ -44,9 +44,9 @@ return [
     */
 
     'argon' => [
-        'memory' => PASSWORD_ARGON2_DEFAULT_MEMORY_COST,
-        'threads' => PASSWORD_ARGON2_DEFAULT_THREADS,
-        'time' => PASSWORD_ARGON2_DEFAULT_TIME_COST,
+        'memory' => env('PASSWORD_ARGON2_DEFAULT_MEMORY_COST', '2048k'),
+        'threads' => env('PASSWORD_ARGON2_DEFAULT_THREADS', 6),
+        'time' => env('PASSWORD_ARGON2_DEFAULT_TIME_COST', 10),
     ],
 
 ];
